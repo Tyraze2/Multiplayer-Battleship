@@ -8,11 +8,17 @@ h1 {
     text-align: center;
 }
 
+h2 {
+    text-align: center;
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(10, 40px);
     grid-template-rows: repeat(10, 40px);
     gap: 5px;
+    text-align: center;
+    justify-content: center;
 }
 
 .square {
