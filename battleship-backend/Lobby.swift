@@ -1,14 +1,14 @@
 import Foundation
 
-class player1 {
-    enum p1Status {
+class Player {
+    enum Status {
         case matchmaking
         case idle
         case inMatch
     }
-    let p1Username = ""
+    let Username = ""
     var isInGame = false
-    let p1ID: UUID
+    let userID: UUID
     init(p1ID: UUID = UUID()
 }
     
