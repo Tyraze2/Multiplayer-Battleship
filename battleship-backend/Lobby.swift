@@ -1,12 +1,12 @@
 import Foundation
 
-enum Status {
+enum Status: String, Codable  {
         case matchmaking
         case idle
         case inMatch
 }
 
-class Player {
+class Player: Codable {
     let username: String
     var onlineStatus: Status = .idle
     let userID: UUID
