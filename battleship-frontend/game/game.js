@@ -7,7 +7,6 @@ const opponentGrid = document.querySelector('#opponent-board .grid');
 for (let i = 0; i < 100; i++) {
     const playerCell = document.createElement('div');
     playerCell.classList.add('cell');
-    
     playerCell.addEventListener('click', () => {
         if (state === 'placing') {
             playerCell.style.backgroundColor = 'blue';
@@ -38,3 +37,5 @@ if (state === 'none') {
     alert("You shouldn't be here....");
     window.location.href = '../lobby/index.html';
 }
+
+// works for now, dummy code. will implement networking later, gonna do lobby now
