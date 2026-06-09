@@ -8,7 +8,7 @@ enum Status {
 
 class Player {
     let username: String
-    var isInGame = false
+    var onlineStatus: Status = .idle
     let userID: UUID
     init(username: String, userID: UUID = UUID())
 }
