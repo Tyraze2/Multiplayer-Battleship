@@ -12,7 +12,7 @@ func APIConnection(_ app: Application) throws {
         ws.onText {
             ws, text in
             guard let data = text.data(using: .utf8) else {return}
-do {
+            do {
                 let packet = try JSONDecoder().decode(GamePacket.self, from: data)
                 
                 if packet.action == "join" {
@@ -25,7 +25,8 @@ do {
                         }
                     }
                 }
-            } catch {
+            } 
+            catch {
                 print("Error")
             }
         }
