@@ -8,7 +8,14 @@ h1 {
     text-align: center;
 }
 
-h2 {
+#game-container {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 20px;
+}
+
+.board {
     text-align: center;
 }
 
@@ -16,15 +23,20 @@ h2 {
     display: grid;
     grid-template-columns: repeat(10, 40px);
     grid-template-rows: repeat(10, 40px);
-    gap: 5px;
-    text-align: center;
-    justify-content: center;
+    gap: 2px; 
+    background-color: #333; 
+    padding: 2px;
 }
 
-.square {
+.cell {
     width: 40px;
     height: 40px;
-    background-color: lightblue;
-    border: 1px solid black;
+    background-color: #4e5d6c; 
+    border: 1px solid #1a1a2e;
     cursor: pointer;
+    box-sizing: border-box; 
+}
+
+.cell:hover {
+    background-color: #00adb5;
 }
