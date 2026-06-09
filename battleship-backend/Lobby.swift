@@ -8,6 +8,7 @@ class player1 {
     }
     let p1Username = ""
     var isInGame = false
-    let p1ID = UUID()
+    let p1ID: UUID
+    init(p1ID: UUID = UUID()
 }
     
