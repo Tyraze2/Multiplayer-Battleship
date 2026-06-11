@@ -10,6 +10,8 @@ class Player: Codable {
     let username: String
     var onlineStatus: Status = .idle
     let userID: UUID
-    init(username: String, userID: UUID = UUID())
+    init(username: String?, userID: UUID = UUID()){
+            self.username = username ?? "Guest"
+            self.userID = userID
 }
     
