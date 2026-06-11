@@ -3,9 +3,10 @@ import Vapor
 
 class Lobby {
     var id: String
-    var player1: WebSocket? = nil
-    var player2: WebSocket? = nil
-    var isFull = true 
+    var player1: (WebSocket?, Status) = (nil, .idle)
+    var player2: (WebSocket?, Status) = (nil, .idle)
+    var isFull -> Bool {
+        if player1
     init(id: String){
         self.id = id
     }
