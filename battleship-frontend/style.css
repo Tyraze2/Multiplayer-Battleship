@@ -78,20 +78,27 @@ h1 {
     margin: 0 auto;
 }
 
-.join-btn, .full-status {
+.join-btn, .full-status, .ivalid {
     background-color: #4e5d6c;
     border: none;
     padding: 8px 16px;
     color: white;
     border-radius: 4px;
     font-size: 14px;
-    cursor: pointer;
 }
 
 .join-btn:hover {
     background-color: #00adb5;
+    cursor: pointer;
 }
 
 .full-status {
     background-color: #e74c3c;
+}
+
+/* i lowk mispelled ts but it's funny */
+
+.ivalid {
+    background-color: #ffbb00;
+    color: black;
 }

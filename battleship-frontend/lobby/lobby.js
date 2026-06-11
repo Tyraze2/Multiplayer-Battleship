@@ -10,8 +10,10 @@ socket.addEventListener('message', event => {
 });
 
 const games = [
-    {name: "test", players: 1 },
-    {name: "test2", players: 2 }
+    {name: "test", players: 2 },
+    {name: "test2", players: 1 },
+    {name: "test3", players: 0 },
+    {name: "test4", players: 3 }
 ]; // barebones and not the way packets are gonna be recieved but good enough to test for now
 
 
@@ -19,9 +21,9 @@ socket.addEventListener('open', (event) => {
     console.log("by pure hopes and dreams we somehow connected mashallah");
 });
 
-function lobbyUI(games) {
-    // todo: sort games by player count (so that full games are at the bottom)
-    
+function lobbyUI(games) {    
+    const sortedGames = games.sort((a, b) => a.players - b.players);
+
     const gamesContainer = document.querySelector('#lobby-list')
     gamesContainer.innerHTML = '';
 
@@ -29,16 +31,22 @@ function lobbyUI(games) {
         const game = document.createElement('li');
         game.classList.add('game');
         if ( games[i].players == 2 ) {
-            game.innerHTML = `<span>${games[i].name}</span><span class="full-status">Full</span>`;
+            game.innerHTML = `<span>${sortedGames[i].name}</span><span class="full-status">Full</span>`;
         } // full game nono!
+        else if (games[i].players > 2) {
+            game.innerHTML = `<span>${sortedGames[i].name}</span><span class="ivalid">Invalid Game</span>`;
+        } // no handling for sorting these to be at the btotom but lowk this will never happen i think so it's fine
+        else if (games[i].players < 1) {
+            game.innerHTML = `<span>${sortedGames[i].name}</span><span class="ivalid">Invalid Game</span>`;
+        }
         else {
-            game.innerHTML = `<span>${games[i].name}</span><button class="join-btn">Join</button>`
+            game.innerHTML = `<span>${sortedGames[i].name}</span><button class="join-btn">Join</button>`
         } // not full game yesyes!
         
         gamesContainer.appendChild(game); // they had baby child
     }
 }
 
-// ok im gonna leave for school now remind me to WORK
+// ok im gonna leave for school now remind to do this
 
 lobbyUI(games);
