@@ -5,9 +5,11 @@ class Lobby {
     var id: String
     var player1 = Player()
     var player2 = Player()
-    var isFull -> Bool {
+    var isFull: Bool {
         if player1 != nil && player2 != nil {
             return true
+        } else {
+            return false
         }
     }
     init(id: String){
