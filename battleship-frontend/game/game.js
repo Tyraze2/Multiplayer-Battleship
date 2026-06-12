@@ -1,13 +1,15 @@
-const clientRole = new URLSearchParams(window.location.search);
-if (url.searchParams.get('role') === 'joiner') {
-    let state = 'joining'
-} else if (url.searchParams.get('role') === 'host') {
-    let state = 'waiting'
+const parsnip = new URLSearchParams(window.location.search);
+if (parsnip.get('role') === 'joiner') {
+    state = 'joining'
+} else if (parsnip.get('role') === 'host') {
+    state = 'waiting'
 } else {
-    let state = 'none'
-}
-// 'joining', 'waiting', 'placing', 'playing not turn', 'playing turn', 'none'
+    state = 'none'
+};
+console.log(state);
+// possible states: 'joining', 'waiting', 'placing', 'playing not turn', 'playing turn', 'none'
  
+document.getElementById('lobbyname').textContent = parsnip.get("game") + "'s game";
 
 const playerShips = Array(100).fill(false);
 
@@ -36,8 +38,8 @@ for (let i = 0; i < 100; i++) {
         if (state === 'playing turn') {
             opponentCell.style.backgroundColor = 'red';
             console.log(`attacked ${i}`);
-        } else if (state === 'placing') {
-            console.log("invalid move");
+        } else {
+            console.log("cannot play when not your turn!");
         }
     });
     opponentGrid.appendChild(opponentCell);

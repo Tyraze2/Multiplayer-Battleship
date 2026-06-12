@@ -22,14 +22,13 @@ function startGame() {
     } else {
         alert("something went wrong... likely server side :( please tell either valentin or isabel about this problem to fix")
     }
-}
+} // hi
 
 const games = [
     {name: "test", players: 2 },
     {name: "test2", players: 1 },
     {name: "test3", players: 0 },
     {name: "test4", players: 3 },
-    // add 5 more tests
     {name: "test5", players: 2 },
 ]; // barebones and not the way packets are gonna be recieved but good enough to test for now
 
