@@ -6,7 +6,11 @@ class Lobby {
     var player1: Player?
     var player2: Player?
     var isFull: Bool {
-        return player1 != nil && player2 != nil 
+        if player1 != nil && player2 != nil {
+            return true
+        } else {
+            return false
+        }
     }
     init(id: String){
         self.id = id
@@ -23,11 +27,14 @@ class LobbyManager {
         lobbyList[id] = newLobby
     }
     func AddPlayerToLobby() {
-        if player1 == nil {
-            player1 = Player
+        guard if Lobby.player1 != nil && Lobby.player2 != nil {
+            return
         }
-        if player2 == nil {
-            player2 = Player
+        if Lobby.player1 == nil {
+            Lobby.player1 = Player
+        }
+        if Lobby.player2 == nil {
+            Lobby.player2 = Player
         }
     }
 }
