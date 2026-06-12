@@ -42,8 +42,6 @@ h1 {
     border-radius: 4px;
 }
 
-/* reminder to test border radius here for game cells */
-
 .cell:hover {
     background-color: #00adb5;
 }
