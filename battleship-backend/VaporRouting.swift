@@ -117,10 +117,30 @@ class WebSocketManager {
     }
 }
 
-// MARK: - Main API Connection
+// MARK: - Main API Connection with WebSocket Routes
 func APIConnection(_ app: Application) throws {
+    // Configure CORS for WebSocket and HTTP connections
+    let corsConfiguration = CORSMiddleware.Configuration(
+        allowedOrigin: .all,
+        allowedMethods: [.GET, .POST, .PUT, .OPTIONS, .DELETE, .PATCH],
+        allowedHeaders: [.accept, .contentType, .origin, .userAgent, .accessControlAllowOrigin],
+        exposedHeaders: [],
+        maxAge: 600,
+        cacheExposedHeaders: false,
+        allowCredentials: true
+    )
+    app.middleware.use(CORSMiddleware(configuration: corsConfiguration))
+    
+    // Health check endpoint
+    app.get("health") { req in
+        return ["status": "healthy"]
+    }
+    
+    // WebSocket endpoint for game connection
     app.webSocket("ws") { req, ws in
         var currentPlayerId: String?
+        
+        print("🔌 New WebSocket connection attempt")
         
         // Handle incoming messages
         ws.onText { ws, text in
@@ -152,6 +172,13 @@ func APIConnection(_ app: Application) throws {
                     if let data = packet.data {
                         handleChat(playerId: packet.playerId, data: data)
                     }
+                    
+                case "ping":
+                    let pongMessage = GameMessage(
+                        type: "pong",
+                        content: ["timestamp": AnyCodable(Int(Date().timeIntervalSince1970))]
+                    )
+                    WebSocketManager.shared.sendMessageToPlayer(playerId: packet.playerId, message: pongMessage)
                     
                 default:
                     print("⚠️ Unknown action: \(packet.action)")
@@ -187,6 +214,22 @@ func APIConnection(_ app: Application) throws {
         if let jsonData = try? JSONEncoder().encode(welcomeMessage),
            let jsonString = String(data: jsonData, encoding: .utf8) {
             ws.send(jsonString)
+        }
+    }
+    
+    // WebSocket endpoint for lobby updates
+    app.webSocket("ws", "lobby") { req, ws in
+        print("🔌 Lobby WebSocket connection established")
+        
+        // Send initial lobby state
+        broadcastLobbyUpdate()
+        
+        ws.onClose.whenComplete { _ in
+            print("❌ Lobby WebSocket disconnected")
+        }
+        
+        ws.onError { ws, error in
+            print("❌ Lobby WebSocket Error: \(error.localizedDescription)")
         }
     }
 }
@@ -269,21 +312,16 @@ func broadcastLobbyUpdate() {
         )
     }
     
-    let lobbyUpdate = LobbyUpdate(
-        status: "lobby_updated",
-        playerCount: WebSocketManager.shared.getPlayerCount(),
-        players: players
+    let lobbyUpdate = GameMessage(
+        type: "lobby_update",
+        content: [
+            "status": AnyCodable("lobby_updated"),
+            "playerCount": AnyCodable(WebSocketManager.shared.getPlayerCount()),
+            "players": AnyCodable(players)
+        ]
     )
     
-    let encoder = JSONEncoder()
-    if let jsonData = try? encoder.encode(lobbyUpdate),
-       let jsonString = String(data: jsonData, encoding: .utf8) {
-        let message = GameMessage(
-            type: "lobby_update",
-            content: [:]
-        )
-        WebSocketManager.shared.broadcastMessage(message)
-    }
+    WebSocketManager.shared.broadcastMessage(lobbyUpdate)
 }
 
 func sendError(_ ws: WebSocket, _ errorMessage: String) {
