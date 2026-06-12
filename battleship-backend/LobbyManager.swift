@@ -3,8 +3,8 @@ import Vapor
 
 class Lobby {
     var id: String
-    var player1 = Player()
-    var player2 = Player()
+    var player1?
+    var player2?
     var isFull: Bool {
         if player1 != nil && player2 != nil {
             return true
@@ -19,9 +19,11 @@ class Lobby {
 
 class LobbyManager {
     static let shared = LobbyManager()
-    var lobbyList: [String, Lobby] = [:]
+    var lobbyList: [String: Lobby] = [:]
     private init(){}
-    func addLobby{
-        
+    
+    func addLobby(id: String) {
+        let newLobby = Lobby(id: id)
+        lobbyList[id] = newLobby
     }
 }
