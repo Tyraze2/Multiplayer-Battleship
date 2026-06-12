@@ -22,11 +22,11 @@ class LobbyManager {
         let newLobby = Lobby(id: id)
         lobbyList[id] = newLobby
     }
-    func AddPlayerToLobby {
-        if player1 = nil {
+    func AddPlayerToLobby() {
+        if player1 == nil {
             player1 = Player
         }
-        if player2 = nil {
+        if player2 == nil {
             player2 = Player
         }
     }
