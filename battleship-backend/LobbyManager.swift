@@ -14,5 +14,9 @@ class Lobby {
 
 class LobbyManager {
     static let shared = LobbyManager()
+    var lobbyList: [String, Lobby] = [:]
     private init(){}
+    func addLobby{
+        
+    }
 }
