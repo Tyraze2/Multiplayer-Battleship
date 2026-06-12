@@ -10,6 +10,12 @@ h1 {
     text-align: center;
 }
 
+footer {
+    text-align: center;
+    margin-top: 20px;
+    color: white;
+}
+
 /* game styling */
 
 .board {
@@ -76,7 +82,7 @@ h1 {
     margin: 0 auto;
 }
 
-.join-btn, .full-status, .ivalid {
+.join-btn, .full-status, .ivalid, #gamename, #creategame-btn {
     background-color: #4e5d6c;
     border: none;
     padding: 8px 16px;
@@ -94,9 +100,7 @@ h1 {
     background-color: #e74c3c;
 }
 
-/* i lowk mispelled ts but it's funny */
-
-.ivalid {
+.ivalid { /* i lowk mispelled ts but it's funny */
     background-color: #ffbb00;
     color: black;
 }

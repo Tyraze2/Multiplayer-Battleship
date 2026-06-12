@@ -1,4 +1,14 @@
-let state = 'placing'; // 'placing', 'playing not turn', 'playing turn', 'none'
+const clientRole = new URLSearchParams(window.location.search);
+if (url.searchParams.get('role') === 'joiner') {
+    let state = 'joining'
+} else if (url.searchParams.get('role') === 'host') {
+    let state = 'waiting'
+} else {
+    let state = 'none'
+}
+// 'joining', 'waiting', 'placing', 'playing not turn', 'playing turn', 'none'
+ 
+
 const playerShips = Array(100).fill(false);
 
 const playerGrid = document.querySelector('#player-board .grid');
@@ -34,7 +44,7 @@ for (let i = 0; i < 100; i++) {
 }
 
 if (state === 'none') {
-    alert("You shouldn't be here....");
+    alert("you shouldn't be here....");
     window.location.href = '../lobby/index.html';
 }
 

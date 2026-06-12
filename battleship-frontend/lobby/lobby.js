@@ -9,11 +9,28 @@ socket.addEventListener('message', event => {
     }
 });
 
+// create a game
+
+function startGame() {
+    gameName = gamename.value;
+    socket.send(JSON.stringify({action: "start_game", name: gameName}));
+    if (gameName == "") {
+        alert("pls enter game name ok be nice. also do you like this game? i like it a lot. #wholesomechungus");
+        return;
+    } else if (socket.readyState === WebSocket.OPEN) {
+        window.location.href = `../game/game.html?game=${encodeURIComponent(gamename)}&role=creator`
+    } else {
+        alert("something went wrong... likely server side :( please tell either valentin or isabel about this problem to fix")
+    }
+}
+
 const games = [
     {name: "test", players: 2 },
     {name: "test2", players: 1 },
     {name: "test3", players: 0 },
-    {name: "test4", players: 3 }
+    {name: "test4", players: 3 },
+    // add 5 more tests
+    {name: "test5", players: 2 },
 ]; // barebones and not the way packets are gonna be recieved but good enough to test for now
 
 socket.addEventListener('open', (event) => {
@@ -47,7 +64,7 @@ function lobbyUI(games) {
         const joinBtn = game.querySelector('.join-btn');
         if (joinBtn) {
             joinBtn.addEventListener('click', (event) => {
-                window.location.href = `../game/game.html?game=${encodeURIComponent(sortedGames[i].name)}`;
+                window.location.href = `../game/game.html?game=${encodeURIComponent(sortedGames[i].name)}&role=joiner`;
             });
         }
     }
