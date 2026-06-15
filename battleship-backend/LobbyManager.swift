@@ -32,10 +32,10 @@ class LobbyManager {
             return
         }
         if Lobby.player1 == nil {
-            Lobby.player1 = Player
+            Lobby.player1 = Player()
         }
         if Lobby.player2 == nil {
-            Lobby.player2 = Player
+            Lobby.player2 = Player()
         }
     }
 }
