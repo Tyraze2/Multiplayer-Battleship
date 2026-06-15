@@ -27,10 +27,9 @@ class LobbyManager {
         lobbyList[id] = newLobby
     }
     func AddPlayerToLobby() {
-        guard {
-            if Lobby.player1 != nil && Lobby.player2 != nil {
-                return
-            }
+        guard Lobby.player1 == nil || Lobby.player1 == nil 
+        else {
+            return
         }
         if Lobby.player1 == nil {
             Lobby.player1 = Player
