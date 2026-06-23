@@ -22,7 +22,7 @@ class LobbyManager {
     var lobbyList: [String: Lobby] = [:]
     private init(){}
     
-    func addLobby(id: String)
+    func addLobby(id: String) {
         let newLobby = Lobby(id: id)
         lobbyList[id] = newLobby
     }
