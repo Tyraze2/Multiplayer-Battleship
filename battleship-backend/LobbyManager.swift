@@ -27,7 +27,7 @@ class LobbyManager {
         lobbyList[id] = newLobby
     }
     func AddPlayerToLobby(lobbyID: String, player: Player) {
-        guard let lobby = LobbyList[lobbyID]
+        guard let lobby = lobbyList[lobbyID]
         else {
             return
         }
