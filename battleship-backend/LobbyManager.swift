@@ -38,7 +38,7 @@ class LobbyManager {
         if lobby.player1 == nil {
             lobby.player1 = player
         }
-        if lobby.player2 == nil {
+        else if lobby.player2 == nil {
             lobby.player2 = player
         }
     }
@@ -50,7 +50,7 @@ class LobbyManager {
         if lobby.player1 != nil {
             lobby.player1 = nil
         }
-        if lobby.player2 != nil {
+        else if lobby.player2 != nil {
             lobby.player2 = nil
         }
 }
