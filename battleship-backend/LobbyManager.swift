@@ -43,6 +43,7 @@ class LobbyManager {
         }
     }
     func RemovePlayerFromLobby(lobbyID: String, player: Player){
+        guard let lobby = lobbyList[lobbyID]
         guard lobby.player1 != nil || lobby.player2 != nil
         else {
             return
