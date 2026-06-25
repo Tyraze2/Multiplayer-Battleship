@@ -42,4 +42,15 @@ class LobbyManager {
             lobby.player2 = player
         }
     }
+    func RemovePlayerFromLobby(lobbyID: String, player: Player){
+        guard lobby.player1 != nil || lobby.player2 != nil
+        else {
+            return
+        }
+        if lobby.player1 != nil {
+            lobby.player1 = nil
+        }
+        if lobby.player2 != nil {
+            lobby.player2 = nil
+        }
 }
