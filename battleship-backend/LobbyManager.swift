@@ -45,7 +45,7 @@ class LobbyManager {
             lobby.player2 = player
         }
     }
-    func RemovePlayerFromLobby(lobbyID: String, player: Player){
+    func RemovePlayerFromLobby(lobbyID: String, player: Player, id: String){
         guard let lobby = lobbyList[lobbyID]
         else {
             return
