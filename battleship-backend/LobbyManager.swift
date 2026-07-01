@@ -54,10 +54,10 @@ class LobbyManager {
         else {
             return
         }
-        if lobby.player1 != nil {
+        if lobby.player1.userID == id {
             lobby.player1 = nil
         }
-        else if lobby.player2 != nil {
+        else if lobby.player2.userID == id {
             lobby.player2 = nil
         }
 }
