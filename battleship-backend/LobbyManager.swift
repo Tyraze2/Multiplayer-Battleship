@@ -26,6 +26,9 @@ class LobbyManager {
         let newLobby = Lobby(id: id)
         lobbyList[id] = newLobby
     }
+    func removeLobby(id: String) {
+        lobbyList[id] = nil
+    }
     func AddPlayerToLobby(lobbyID: String, player: Player) {
         guard let lobby = lobbyList[lobbyID]
         else {
