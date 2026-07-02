@@ -1,6 +1,133 @@
 import Vapor
 import Foundation
 
+// MARK: - Status Enum
+enum Status: String, Codable {
+    case matchmaking
+    case idle
+    case inMatch
+}
+
+// MARK: - Player Class
+class Player: Codable {
+    let username: String
+    var onlineStatus: Status = .idle
+    let userID: UUID
+    
+    init(username: String?, userID: UUID = UUID()) {
+        self.username = username ?? "Guest"
+        self.userID = userID
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case username
+        case onlineStatus
+        case userID
+    }
+}
+
+// MARK: - Lobby Class
+class Lobby {
+    var id: String
+    var player1: Player?
+    var player2: Player?
+    var isFull: Bool {
+        return player1 != nil && player2 != nil
+    }
+    
+    init(id: String) {
+        self.id = id
+    }
+}
+
+// MARK: - Lobby Manager
+class LobbyManager {
+    static let shared = LobbyManager()
+    var lobbyList: [String: Lobby] = [:]
+    private let queue = DispatchQueue(label: "com.battleship.lobby", attributes: .concurrent)
+    
+    private init() {}
+    
+    func addLobby(id: String) {
+        queue.async(flags: .barrier) {
+            let newLobby = Lobby(id: id)
+            self.lobbyList[id] = newLobby
+            print("✅ Lobby \(id) created")
+        }
+    }
+    
+    func removeLobby(id: String) {
+        queue.async(flags: .barrier) {
+            self.lobbyList[id] = nil
+            print("❌ Lobby \(id) removed")
+        }
+    }
+    
+    func addPlayerToLobby(lobbyID: String, player: Player) {
+        queue.async(flags: .barrier) {
+            guard let lobby = self.lobbyList[lobbyID] else {
+                print("⚠️ Lobby \(lobbyID) not found")
+                return
+            }
+            
+            guard !lobby.isFull else {
+                print("⚠️ Lobby \(lobbyID) is full")
+                return
+            }
+            
+            if lobby.player1 == nil {
+                lobby.player1 = player
+                print("✅ Player \(player.username) added to lobby \(lobbyID) as player1")
+            } else if lobby.player2 == nil {
+                lobby.player2 = player
+                print("✅ Player \(player.username) added to lobby \(lobbyID) as player2")
+            }
+        }
+    }
+    
+    func removePlayerFromLobby(lobbyID: String, userID: String) {
+        queue.async(flags: .barrier) {
+            guard let lobby = self.lobbyList[lobbyID] else {
+                print("⚠️ Lobby \(lobbyID) not found")
+                return
+            }
+            
+            if lobby.player1?.userID.uuidString == userID {
+                if let player = lobby.player1 {
+                    print("❌ Player \(player.username) removed from lobby \(lobbyID)")
+                }
+                lobby.player1 = nil
+            } else if lobby.player2?.userID.uuidString == userID {
+                if let player = lobby.player2 {
+                    print("❌ Player \(player.username) removed from lobby \(lobbyID)")
+                }
+                lobby.player2 = nil
+            }
+            
+            // Remove empty lobbies
+            if lobby.player1 == nil && lobby.player2 == nil {
+                self.lobbyList[lobbyID] = nil
+            }
+        }
+    }
+    
+    func getLobby(id: String) -> Lobby? {
+        var result: Lobby?
+        queue.sync {
+            result = self.lobbyList[id]
+        }
+        return result
+    }
+    
+    func getAllLobbies() -> [String: Lobby] {
+        var result: [String: Lobby] = [:]
+        queue.sync {
+            result = self.lobbyList
+        }
+        return result
+    }
+}
+
 // MARK: - Message Structures
 struct GamePacket: Codable {
     let action: String
@@ -29,6 +156,60 @@ struct GameMessage: Codable {
 struct ErrorResponse: Codable {
     let error: String
     let timestamp: String
+}
+
+// MARK: - AnyCodable for flexible JSON
+enum AnyCodable: Codable {
+    case string(String)
+    case int(Int)
+    case bool(Bool)
+    case double(Double)
+    case array([AnyCodable])
+    case dictionary([String: AnyCodable])
+    case null
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode(Int.self) {
+            self = .int(value)
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode(Double.self) {
+            self = .double(value)
+        } else if let value = try? container.decode([AnyCodable].self) {
+            self = .array(value)
+        } else if let value = try? container.decode([String: AnyCodable].self) {
+            self = .dictionary(value)
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode AnyCodable")
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch self {
+        case .string(let value):
+            try container.encode(value)
+        case .int(let value):
+            try container.encode(value)
+        case .bool(let value):
+            try container.encode(value)
+        case .double(let value):
+            try container.encode(value)
+        case .array(let value):
+            try container.encode(value)
+        case .dictionary(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
+        }
+    }
 }
 
 // MARK: - WebSocket Connection Manager
@@ -117,6 +298,117 @@ class WebSocketManager {
     }
 }
 
+// MARK: - Utility Functions
+func broadcastLobbyUpdate() {
+    let connections = WebSocketManager.shared.getAllConnections()
+    let players = connections.map { _, connection in
+        LobbyPlayer(
+            playerId: connection.player.userID.uuidString,
+            username: connection.player.username,
+            onlineStatus: connection.player.onlineStatus.rawValue
+        )
+    }
+    
+    let lobbyUpdate = GameMessage(
+        type: "lobby_update",
+        content: [
+            "status": AnyCodable("lobby_updated"),
+            "playerCount": AnyCodable(WebSocketManager.shared.getPlayerCount()),
+            "players": AnyCodable(players.map { player in
+                AnyCodable.dictionary([
+                    "playerId": AnyCodable(player.playerId),
+                    "username": AnyCodable(player.username),
+                    "onlineStatus": AnyCodable(player.onlineStatus)
+                ])
+            })
+        ]
+    )
+    
+    WebSocketManager.shared.broadcastMessage(lobbyUpdate)
+}
+
+func sendError(_ ws: WebSocket, _ errorMessage: String) {
+    let error = ErrorResponse(
+        error: errorMessage,
+        timestamp: ISO8601DateFormatter().string(from: Date())
+    )
+    
+    if let jsonData = try? JSONEncoder().encode(error),
+       let jsonString = String(data: jsonData, encoding: .utf8) {
+        ws.send(jsonString)
+    }
+}
+
+// MARK: - Action Handlers
+func handlePlayerJoin(packet: GamePacket, ws: WebSocket) {
+    guard let username = packet.username else {
+        sendError(ws, "Username required")
+        return
+    }
+    
+    let playerID = UUID(uuidString: packet.playerId) ?? UUID()
+    let player = Player(username: username, userID: playerID)
+    player.onlineStatus = .idle
+    
+    WebSocketManager.shared.addConnection(playerId: packet.playerId, player: player, socket: ws)
+    
+    // Send confirmation to joining player
+    let joinConfirm = GameMessage(
+        type: "join_confirmed",
+        content: [
+            "playerId": AnyCodable(packet.playerId),
+            "username": AnyCodable(username),
+            "userID": AnyCodable(playerID.uuidString)
+        ]
+    )
+    WebSocketManager.shared.sendMessageToPlayer(playerId: packet.playerId, message: joinConfirm)
+    
+    // Broadcast updated lobby to all players
+    broadcastLobbyUpdate()
+}
+
+func handlePlayerReady(playerId: String) {
+    if let connection = WebSocketManager.shared.getConnection(playerId: playerId) {
+        connection.player.onlineStatus = .matchmaking
+        print("🎮 Player \(connection.player.username) is ready")
+        
+        let readyMessage = GameMessage(
+            type: "player_ready",
+            content: ["playerId": AnyCodable(playerId)]
+        )
+        WebSocketManager.shared.broadcastMessage(readyMessage)
+        broadcastLobbyUpdate()
+    }
+}
+
+func handleAttack(playerId: String, data: [String: AnyCodable]) {
+    print("⚔️ Player \(playerId) attacking")
+    
+    let attackMessage = GameMessage(
+        type: "attack",
+        content: [
+            "playerId": AnyCodable(playerId),
+            "coordinates": data["coordinates"] ?? AnyCodable("unknown")
+        ]
+    )
+    WebSocketManager.shared.broadcastMessage(attackMessage)
+}
+
+func handleChat(playerId: String, data: [String: AnyCodable]) {
+    if let messageContent = data["message"] {
+        if let connection = WebSocketManager.shared.getConnection(playerId: playerId) {
+            let chatMessage = GameMessage(
+                type: "chat",
+                content: [
+                    "username": AnyCodable(connection.player.username),
+                    "message": messageContent
+                ]
+            )
+            WebSocketManager.shared.broadcastMessage(chatMessage)
+        }
+    }
+}
+
 // MARK: - Main API Connection with WebSocket Routes
 func APIConnection(_ app: Application) throws {
     // Configure CORS for WebSocket and HTTP connections
@@ -134,6 +426,27 @@ func APIConnection(_ app: Application) throws {
     // Health check endpoint
     app.get("health") { req in
         return ["status": "healthy"]
+    }
+    
+    // Get lobby list endpoint
+    app.get("lobbies") { req in
+        let lobbies = LobbyManager.shared.getAllLobbies()
+        let lobbyList = lobbies.map { id, lobby in
+            [
+                "id": id,
+                "isFull": lobby.isFull,
+                "player1": lobby.player1?.username ?? "empty",
+                "player2": lobby.player2?.username ?? "empty"
+            ]
+        }
+        return ["lobbies": lobbyList]
+    }
+    
+    // Create lobby endpoint
+    app.post("lobbies", "create") { req -> [String: String] in
+        let lobbyID = UUID().uuidString
+        LobbyManager.shared.addLobby(id: lobbyID)
+        return ["lobbyId": lobbyID]
     }
     
     // WebSocket endpoint for game connection
@@ -230,152 +543,6 @@ func APIConnection(_ app: Application) throws {
         
         ws.onError { ws, error in
             print("❌ Lobby WebSocket Error: \(error.localizedDescription)")
-        }
-    }
-}
-
-// MARK: - Action Handlers
-func handlePlayerJoin(packet: GamePacket, ws: WebSocket) {
-    guard let username = packet.username else {
-        sendError(ws, "Username required")
-        return
-    }
-    
-    let player = Player(username: username, userID: UUID(uuidString: packet.playerId) ?? UUID())
-    player.onlineStatus = .idle
-    
-    WebSocketManager.shared.addConnection(playerId: packet.playerId, player: player, socket: ws)
-    
-    // Send confirmation to joining player
-    let joinConfirm = GameMessage(
-        type: "join_confirmed",
-        content: [
-            "playerId": AnyCodable(packet.playerId),
-            "username": AnyCodable(username)
-        ]
-    )
-    WebSocketManager.shared.sendMessageToPlayer(playerId: packet.playerId, message: joinConfirm)
-    
-    // Broadcast updated lobby to all players
-    broadcastLobbyUpdate()
-}
-
-func handlePlayerReady(playerId: String) {
-    if let connection = WebSocketManager.shared.getConnection(playerId: playerId) {
-        connection.player.onlineStatus = .matchmaking
-        print("🎮 Player \(connection.player.username) is ready")
-        
-        let readyMessage = GameMessage(
-            type: "player_ready",
-            content: ["playerId": AnyCodable(playerId)]
-        )
-        WebSocketManager.shared.broadcastMessage(readyMessage)
-    }
-}
-
-func handleAttack(playerId: String, data: [String: AnyCodable]) {
-    print("⚔️ Player \(playerId) attacking")
-    
-    let attackMessage = GameMessage(
-        type: "attack",
-        content: [
-            "playerId": AnyCodable(playerId),
-            "coordinates": data["coordinates"] ?? AnyCodable("unknown")
-        ]
-    )
-    WebSocketManager.shared.broadcastMessage(attackMessage)
-}
-
-func handleChat(playerId: String, data: [String: AnyCodable]) {
-    if let messageContent = data["message"] {
-        if let connection = WebSocketManager.shared.getConnection(playerId: playerId) {
-            let chatMessage = GameMessage(
-                type: "chat",
-                content: [
-                    "username": AnyCodable(connection.player.username),
-                    "message": messageContent
-                ]
-            )
-            WebSocketManager.shared.broadcastMessage(chatMessage)
-        }
-    }
-}
-
-// MARK: - Utility Functions
-func broadcastLobbyUpdate() {
-    let connections = WebSocketManager.shared.getAllConnections()
-    let players = connections.map { _, connection in
-        LobbyPlayer(
-            playerId: connection.player.userID.uuidString,
-            username: connection.player.username,
-            onlineStatus: connection.player.onlineStatus.rawValue
-        )
-    }
-    
-    let lobbyUpdate = GameMessage(
-        type: "lobby_update",
-        content: [
-            "status": AnyCodable("lobby_updated"),
-            "playerCount": AnyCodable(WebSocketManager.shared.getPlayerCount()),
-            "players": AnyCodable(players)
-        ]
-    )
-    
-    WebSocketManager.shared.broadcastMessage(lobbyUpdate)
-}
-
-func sendError(_ ws: WebSocket, _ errorMessage: String) {
-    let error = ErrorResponse(
-        error: errorMessage,
-        timestamp: ISO8601DateFormatter().string(from: Date())
-    )
-    
-    if let jsonData = try? JSONEncoder().encode(error),
-       let jsonString = String(data: jsonData, encoding: .utf8) {
-        ws.send(jsonString)
-    }
-}
-
-// MARK: - AnyCodable for flexible JSON
-enum AnyCodable: Codable {
-    case string(String)
-    case int(Int)
-    case bool(Bool)
-    case double(Double)
-    case null
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        
-        if container.decodeNil() {
-            self = .null
-        } else if let value = try? container.decode(String.self) {
-            self = .string(value)
-        } else if let value = try? container.decode(Int.self) {
-            self = .int(value)
-        } else if let value = try? container.decode(Bool.self) {
-            self = .bool(value)
-        } else if let value = try? container.decode(Double.self) {
-            self = .double(value)
-        } else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode AnyCodable")
-        }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        
-        switch self {
-        case .string(let value):
-            try container.encode(value)
-        case .int(let value):
-            try container.encode(value)
-        case .bool(let value):
-            try container.encode(value)
-        case .double(let value):
-            try container.encode(value)
-        case .null:
-            try container.encodeNil()
         }
     }
 }
